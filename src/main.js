@@ -1,22 +1,23 @@
 "use strict";
 
-// to modify the DOM depending on the screen
+// Dynamic function to build DOM elements
 function buildDom(htmlString) {
-  var div = document.createElement("div");
+  let div = document.createElement("div");
 
   div.innerHTML = htmlString;
 
   return div.children[0];
 }
 
-// main game function for page load
+// Main game function
 function main() {
-  var game;
-  var splashScreen;
-  var gameOverScreen;
+  let game;
+  let splashScreen;
+  let gameOverScreen;
 
-  // SETTING GAME SPLASH SCREEN
+  // FUNCTION TO SET GAME SPLASH SCREEN
   function createSplashScreen() {
+    // creating the page
     splashScreen = buildDom(`
       <main>
         <div class="container">
@@ -27,6 +28,7 @@ function main() {
             <h2>Instructions!</h2>
             <p>
               Shoot the tentacles and avoid getting them stacked after the dotted line<br>
+              If the ship
               <br>
               Arrow Left --> Move Ship Left<br>
               Arrow Right --> Move Ship Right<br>
@@ -44,22 +46,27 @@ function main() {
         </div>
       </main>`);
 
+    // adding the page to the DOM
     document.body.appendChild(splashScreen);
 
-    var startButton = splashScreen.querySelector("#start-btn");
-
+    // addEventListener to start the game on button click
+    let startButton = splashScreen.querySelector("#start-btn");
     startButton.addEventListener("click", function() {
       startGame();
     });
   }
 
-  function removeSplashScreen() {
-    splashScreen.remove();
-  }
+  // function to remove the SPLASH screen
+  const removeSplashScreen = () => splashScreen.remove();
 
-  // SETTING GAME SCREEN
+  // function removeSplashScreen() {
+  //   splashScreen.remove();
+  // }
+
+  // FUNCTION TO SET GAME SCREEN
   function createGameScreen() {
-    var gameScreen = buildDom(`
+    // creating the page
+    let gameScreen = buildDom(`
     <main class="game game-container">
       <header>
         <div class="kill-score score">
@@ -81,51 +88,63 @@ function main() {
     </main>
     `);
 
+    // adding the page to the DOM
     document.body.appendChild(gameScreen);
 
     // return so we can store page in game as per startGame function
     return gameScreen;
   }
 
-  function removeGameScreen() {
-    // gameScreen is stored in game per startGame function
-    game.gameScreen.remove();
-  }
+  // function to remove the GAME screen
+  const removeGameScreen = () => game.gameScreen.remove();
+
+  // gameScreen is stored in game per startGame function
+  // function removeGameScreen() {
+  //   game.gameScreen.remove();
+  // }
 
   // SETTING GAME OVER SCREEN
   function createGameOverScreen(totalScore) {
-    var scoreRanking = JSON.parse(localStorage.getItem("score"));
+    // score ranking logic
+    let scoreRanking = JSON.parse(localStorage.getItem("score"));
+
+    let scoreStr1;
+    let scoreStr2;
+    let scoreStr3;
+    let scoreStr4;
+    let scoreStr5;
 
     if (scoreRanking[0]) {
-      var scoreStr1 = `${scoreRanking[0].name} : ${scoreRanking[0].score}`;
+      scoreStr1 = `${scoreRanking[0].name} : ${scoreRanking[0].score}`;
     } else {
-      var scoreStr1 = "filty landlubber : 0";
+      scoreStr1 = "filty landlubber : 0";
     }
 
     if (scoreRanking[1]) {
-      var scoreStr2 = `${scoreRanking[1].name} : ${scoreRanking[1].score}`;
+      scoreStr2 = `${scoreRanking[1].name} : ${scoreRanking[1].score}`;
     } else {
-      var scoreStr2 = "filty landlubber : 0";
+      scoreStr2 = `filty landlubber : 0`;
     }
 
     if (scoreRanking[2]) {
-      var scoreStr3 = `${scoreRanking[2].name} : ${scoreRanking[2].score}`;
+      scoreStr3 = `${scoreRanking[2].name} : ${scoreRanking[2].score}`;
     } else {
-      var scoreStr3 = "filty landlubber : 0";
+      scoreStr3 = `filty landlubber : 0`;
     }
 
     if (scoreRanking[3]) {
-      var scoreStr4 = `${scoreRanking[3].name} : ${scoreRanking[3].score}`;
+      scoreStr4 = `${scoreRanking[3].name} : ${scoreRanking[3].score}`;
     } else {
-      var scoreStr4 = "filty landlubber : 0";
+      scoreStr4 = `filty landlubber : 0`;
     }
 
     if (scoreRanking[4]) {
-      var scoreStr5 = `${scoreRanking[4].name} : ${scoreRanking[4].score}`;
+      scoreStr5 = `${scoreRanking[4].name} : ${scoreRanking[4].score}`;
     } else {
-      var scoreStr5 = "filty landlubber : 0";
+      scoreStr5 = `filty landlubber : 0`;
     }
 
+     // creating the page
     gameOverScreen = buildDom(`
     <main>
         <div class="container">
@@ -145,19 +164,23 @@ function main() {
                 <li> ${scoreStr5} </li>
               </ul>
             </div class="input-container">
-            <label for="name" >Name: </label>
-            <input type="text" id="name" maxlength="24">
-            <button id="restart-btn" class="button" >RESTART!</button>
+            <div class="input-container">
+              <label for="name" >Name: </label>
+              <input type="text" id="name" maxlength="24">
+              <button id="restart-btn" class="button">RESTART!</button>
+            </div>
         </div>
     </main>`);
 
+    // adding the page to the DOM
     document.body.appendChild(gameOverScreen);
 
-    var button = gameOverScreen.querySelector("button");
-
+    // addEventListener to start the game on button click
+    let button = gameOverScreen.querySelector("button");
     button.addEventListener("click", startGame);
   }
 
+  // function to remove the GAMEOVER screen
   function removeGameOverScreen() {
     // by checking we avoid an issue when removing this when game starts on the first time
     if (gameOverScreen !== undefined) {
@@ -168,15 +191,19 @@ function main() {
   // SETTING THE GAME STATE
 
   function startGame() {
+    let inputNameMain;
+
+    // adds default name for score ranking
     if (!document.querySelector("input").value) {
-      inputNameMain = "filty landlubber"
+      inputNameMain = "filty landlubber";
     } else {
-      var inputNameMain = document.querySelector("input").value;
+      inputNameMain = document.querySelector("input").value;
     }
 
-    removeSplashScreen();
-    removeGameOverScreen();
+    removeSplashScreen(); // remove first screen
+    removeGameOverScreen(); // removes gameover screen on restart
 
+    // creating new game instance
     game = new Game(inputNameMain);
     game.gameScreen = createGameScreen();
 
@@ -187,12 +214,13 @@ function main() {
     game.passGameOverCallback(gameOver);
   }
 
+  // function to create gameOver Screen on game end. Passed as callback.
   function gameOver() {
     removeGameScreen();
     createGameOverScreen(this.totalScore);
   }
 
-  // to initialize the splash creen on first page load
+  // to initialize the splash screen on first page load
   createSplashScreen();
 }
 
