@@ -1,44 +1,44 @@
 "use strict";
 
-// to create Game construct
+// to create Game class
 class Game {
   constructor(inputNameMain) {
     this.canvas = null;
     this.ctx = null;
 
-    this.ship1 = null;
-    this.ship2 = null;
-    this.ship3 = null;
-    this.shipArr = [];
-
-    this.tentacleArr = []; // tentacles moving down
+    this.shipArr = []; // array of ships the player controls
+    this.tentacleArr = []; // enemy tentacles moving down
     this.stackedTentacleArr = []; // tentacles that are stacked at the bottom
-    this.cannonballArr = [];
+    this.cannonballArr = []; // cannonballs to kill those darn tentacles
 
     this.selectedShip = 0; // current controlled ship
 
+    this.loopCount = 0;
+    this.spawnCheck = 0; // to check the chances of enemies appearing
+    this.tentacleSpeed = 1; // initial tentacle speed. Changes with dificulty
+    this.dificultyMessage = "";
+
+    this.gameIsOver = false; // to check if game is over and stop animation frames
+    this.gameScreen = null; // to select elements from DOM
+    
+    this.currentShipLine = null; // line that shows current controlled ship
+    this.specialPowerCheck = true; // boolean to set power on one time use only
+    
+    this.inputName = inputNameMain; // player name passed from new game creation
+
+    this.background = new Image();
+    this.background.src = "./img/game-background.png";
+
+    this.timeScoreBoard = "" // scoreboard that shows score by time. to be set inside start method.
+    this.dificultyBoard = "" // for showing current dificulty level. to be set inside start method.
+    this.killScoreBoard = "" // scoreboard that shows score by kills. to be set inside start method.
+
+    // score properties to be passed for score ranking
     this.scoreBoard = 0;
     this.timeScore = 0;
     this.killScore = 0;
     this.totalScore = 0;
     this.scoreScreen = [];
-
-    this.loopCount = 0;
-    this.spawnCheck = 0; // to check the chances of enemies appearing
-    this.tentacleSpeed = 1; // tentacle speed that changes with dificulty
-    this.dificultyMessage = "";
-
-    this.gameIsOver = false;
-    this.gameScreen = null;
-
-    this.background = new Image();
-    this.background.src = "./img/game-background.png";
-
-    this.currentShipLine = null; // line that shows current controlled ship *QoL*
-
-    this.specialPowerCheck = true;
-
-    this.inputName = inputNameMain;
 
     // sounds!
     this.music = new Audio("./sounds/music.ogg");
@@ -50,33 +50,29 @@ class Game {
 
   // to start game
   start() {
-    // canvas creation
 
+    // canvas creation
     this.canvasContainer = document.querySelector(".canvas-container");
     this.canvas = this.canvasContainer.querySelector("canvas");
     this.ctx = this.canvas.getContext("2d");
 
     var containerWidth = this.canvasContainer.offsetWidth;
     var containerHeight = this.canvasContainer.offsetHeight;
-
-    this.timeScoreBoard = this.gameScreen.querySelector(".time-score .value");
-    this.dificultyBoard = this.gameScreen.querySelector(
-      ".dificulty-message .value"
-    );
-    this.killScoreBoard = this.gameScreen.querySelector(".kill-score .value");
-
+    
     this.canvas.setAttribute("width", containerWidth);
     this.canvas.setAttribute("height", containerHeight);
+    
+    this.timeScoreBoard = this.gameScreen.querySelector(".time-score .value"); // scoreboard that shows score by time
+    this.dificultyBoard = this.gameScreen.querySelector(".dificulty-message .value"); // for showing current dificulty level
+    this.killScoreBoard = this.gameScreen.querySelector(".kill-score .value"); // scoreboard that shows score by kills
 
     // add initial ships and push into ship array
-    this.ship1 = new Ship(this.canvas, this.canvas.height - 100);
-    this.shipArr.push(this.ship1);
-    this.ship2 = new Ship(this.canvas, this.canvas.height - 160);
-    this.shipArr.push(this.ship2);
-    this.ship3 = new Ship(this.canvas, this.canvas.height - 220);
-    this.shipArr.push(this.ship3);
+    let ship1 = new Ship(this.canvas, this.canvas.height - 100);
+    let ship2 = new Ship(this.canvas, this.canvas.height - 160);
+    let ship3 = new Ship(this.canvas, this.canvas.height - 220);
+    this.shipArr = [ship1, ship2, ship3];
 
-    // to change ship to control
+    // to change which ship is being controlled
     this.changeShip = function () {
       if (this.selectedShip === 0) {
         this.selectedShip = 1;
@@ -112,6 +108,7 @@ class Game {
     };
     window.addEventListener("keydown", this.keyDownEvents.bind(this));
 
+    // background music settings
     this.music.volume = 0.1;
     this.music.play();
 
@@ -119,78 +116,69 @@ class Game {
     this.startLoop();
   }
 
-  // GAME LOOP
+  // GAME LOOP. clear, update and draw canvas.
   startLoop() {
-    var loop = function () {
-      //  increasing dificulty formula that affects speed and # of tentacles.
-      this.dificultyIncrease();
-
-      // 1. create tentacles randomly. array length check is not to add too many tentacles.
-      this.createTentacles();
-
-      // 2. call for automatic tentacle movement
-      this.tentacleArr.forEach(function (element) {
-        if (element.y + element.height < this.canvas.height) {
-          element.move();
-        }
-      }, this);
-
-      // 3. check if tentacles collided with bottom. they stop and create a stack.
-      this.tentacleReachFort();
-
-      // 4. to keep stacking tentacles on each other
-      this.checkTentacleStack();
-
-      // 5. call automatic ship direction change based on screen collision
-      this.shipArr.forEach(function (ship) {
-        ship.handleScreenCollision();
-      });
-
-      // 6. call automatic ship direction change based on stacked tentacle collision.
-      if (this.stackedTentacleArr.length > 0) {
-        this.shipArr.forEach(function (ship) {
-          this.stackedTentacleArr.forEach(function (stackedTentacle) {
-            this.handleTentacleCollision(ship, stackedTentacle);
-          }, this);
-        }, this);
-      }
-
-      // 7. call for automatic ship movement
-      this.ship1.updatePosition();
-      this.ship2.updatePosition();
-      this.ship3.updatePosition();
-
-      // 8. call for automatic cannonballs movement
-      this.cannonballArr.forEach(function (element) {
-        element.move();
-      });
-
-      // 9. call to check if cannonballs collided with tentacles
-      if (this.cannonballArr.length > 0 && this.tentacleArr.length > 0) {
-        this.checkCannonballHit();
-      }
-
-      // 10. call to calculate score and other board elements and insert on DOM
-      this.calculateScore();
-
-      // 11. to end game when 4th stack of tentacles is created. FORT IS DOWN!
-      this.stackedTentacleArr.forEach(function (stackedTentacle) {
-        // 100 is size of fort wall. 30
-        if (
-          stackedTentacle.y <
-          this.canvas.height - stackedTentacle.height * 3 - 100
-        ) {
-          this.gameIsOver = true;
-          // this.gameOver();
-        }
-      }, this);
+    var loop = () => {
 
       // CLEAR THE CANVAS
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
       // UPDATE THE CANVAS
+      // 1. increasing dificulty formula that affects speed and # of tentacles.
+      this.dificultyIncrease();
 
-      // 0. draw background
+      // 2. create tentacles randomly. array length check is not to add too many tentacles.
+      this.createTentacles();
+
+      // 3. call for automatic tentacle movement
+      this.tentacleArr.forEach(tentacle => {
+        if (tentacle.y + tentacle.height < this.canvas.height) {
+          tentacle.move();
+        }
+      });
+
+      // 4. check if tentacles collided with bottom. they stop and create a stack.
+      this.tentacleReachFort();
+
+      // 5. to keep stacking tentacles on each other
+      this.checkTentacleStack();
+
+      // 6. call automatic ship direction change based on screen collision
+      this.shipArr.forEach(ship => ship.handleScreenCollision());
+
+      // 7. call automatic ship direction change based on stacked tentacle collision.
+      if (this.stackedTentacleArr.length > 0) {
+        this.shipArr.forEach(ship => {
+          this.stackedTentacleArr.forEach(stackedTentacle => {
+            this.handleTentacleCollision(ship, stackedTentacle);
+          });
+        });
+      }
+
+      // 8. call for automatic ship movement
+      this.shipArr.forEach(ship => ship.updatePosition())
+
+      // 9. call for automatic cannonballs movement
+      this.cannonballArr.forEach(cannonBall => cannonBall.move());
+
+      // 10. call to check if cannonballs collided with tentacles
+      if (this.cannonballArr.length > 0 && this.tentacleArr.length > 0) this.checkCannonballHit();
+
+      // 11. call to calculate score and other board elements and insert on DOM
+      this.calculateScore();
+
+      // 12. to end game when 4th stack of tentacles is created. FORT IS DOWN!
+      this.stackedTentacleArr.forEach(stackedTentacle => {
+        if (
+          stackedTentacle.y <
+          this.canvas.height - stackedTentacle.height * 3 - 100 // 100 is size of wall.
+        ) {
+          this.gameIsOver = true; // change boolean for gameOver. requestAnimationFram part will check for this.
+        }
+      });
+
+      // DRAW THE CANVAS
+      // 1. draw background
       this.ctx.drawImage(
         this.background,
         0,
@@ -199,41 +187,34 @@ class Game {
         this.canvas.height
       );
 
-      // 1. draw the currentShip line
+      // 2. draw the currentShip line
       this.shipArr[this.selectedShip].drawLine();
 
-      // 2. draw line indicator for game over
+      // 3. draw line indicator for game over
       this.drawLineGameOver();
 
-      // 3. draw the ship
-      this.shipArr.forEach(function (element) {
-        element.draw();
-      });
+      // 4. draw the ship
+      this.shipArr.forEach(ship => ship.draw() );
 
-      // 4. draw moving tentacles
-      this.tentacleArr.forEach(function (element) {
-        element.draw();
-      });
+      // 5. draw moving tentacles
+      this.tentacleArr.forEach(tentacle => tentacle.draw() );
 
-      // 5. draw stacked tentacles
-      this.stackedTentacleArr.forEach(function (element) {
-        element.draw();
-      });
+      // 6. draw stacked tentacles
+      this.stackedTentacleArr.forEach(tentacle => tentacle.draw() );
 
-      // 6. draw cannonballs
-      this.cannonballArr.forEach(function (element) {
-        element.draw();
-      });
+      // 7. draw cannonballs
+      this.cannonballArr.forEach(cannonBall => cannonBall.draw() );
 
-      // TO ANIMATE LOOP ONLY IF GAME IS NOT OVER YET
+
+      // to continue animating the loop if the game is not over yet
       if (!this.gameIsOver) {
         requestAnimationFrame(loop);
       } else if (this.gameIsOver) {
         this.gameOver();
       }
-    }.bind(this);
+    };
 
-    // request animation frame (loop)
+    // request first animation frame
     loop();
   }
 

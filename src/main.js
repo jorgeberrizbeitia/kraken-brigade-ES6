@@ -59,9 +59,7 @@ function main() {
   // function to remove the SPLASH screen
   const removeSplashScreen = () => splashScreen.remove();
 
-  // function removeSplashScreen() {
-  //   splashScreen.remove();
-  // }
+
 
   // FUNCTION TO SET GAME SCREEN
   function createGameScreen() {
